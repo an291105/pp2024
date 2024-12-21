@@ -1,155 +1,179 @@
-import math
-import numpy as np
 import curses
+import platform
+import math
 
 class Student:
-    def __init__(self, student_id, name, dob):
-        # Initialize the Student class with ID, name, date of birth, and GPA
-        self.student_id = student_id
+    def __init__(self, name, student_id, dob):
+        # Initialize the Student class with name, student ID, and date of birth
         self.name = name
+        self.student_id = student_id
         self.dob = dob
-        self.gpa = 0.0  # Default GPA is set to 0.0
 
 class Course:
-    def __init__(self, course_id, name):
-        # Initialize the Course class with ID and name
-        self.course_id = course_id
+    def __init__(self, name, course_id):
+        # Initialize the Course class with name and course ID
         self.name = name
+        self.course_id = course_id
 
 class StudentManagementSystem:
     def __init__(self):
-        # Initialize the StudentManagementSystem with lists for students, courses, and a dictionary for marks
+        # Initialize the StudentManagementSystem with empty lists for students and courses, and an empty dictionary for marks
         self.students = []
         self.courses = []
         self.marks = {}
 
     def input_num_of_students(self):
-        # Function to input the number of students
+        # Prompt the user to enter the number of students
         num_students = int(input("Enter number of students: "))
         return num_students
 
     def input_student_details(self, num_students):
-        # Function to input details of each student
+        # Prompt the user to enter details for each student
         for _ in range(num_students):
-            student_id = input("Student's Id: ")
-            name = input("Student's Name: ")
-            dob = input(f"Enter date of birth for {name} (DD/MM/YYYY): ")
-            self.students.append(Student(student_id, name, dob))
+            name = input("Enter student name: ")
+            student_id = input("Enter student ID: ")
+            dob = input("Enter student DOB: ")
+            self.students.append(Student(name, student_id, dob))
 
     def input_num_of_courses(self):
-        # Function to input the number of courses
+        # Prompt the user to enter the number of courses
         num_courses = int(input("Enter number of courses: "))
         return num_courses
 
     def input_course_details(self, num_courses):
-        # Function to input details of each course
+        # Prompt the user to enter details for each course
         for _ in range(num_courses):
-            course_id = input("Course's Id: ")
-            name = input("Course's name: ")
-            self.courses.append(Course(course_id, name))
+            name = input("Enter course name: ")
+            course_id = input("Enter course ID: ")
+            self.courses.append(Course(name, course_id))
 
-    def input_student_marks(self):
-        # Function to input marks for each student in a specific course
-        course_id = input("Enter course's id to input student's mark: ")
-        course = next((course for course in self.courses if course.course_id == course_id), None)
-        if not course:
-            print("Course not found.")
-            return 
-
-        for student in self.students:
-            marks = float(input(f"Enter a mark for {student.student_id} ({student.name}): "))
-            marks = math.floor(marks * 10) / 10  # Round down to 1-digit decimal
-            if course_id not in self.marks:
-                self.marks[course_id] = {}
-            self.marks[course_id][student.student_id] = marks
-        
-        # Recalculate GPA for each student after entering marks
-        self.calculate_gpa()
-
-    def calculate_gpa(self):
-        # Function to calculate GPA for each student
-        for student in self.students:
-            marks_array = []
-            credits_array = []
-            for course_id, marks_dict in self.marks.items():
-                if student.student_id in marks_dict:
-                    marks_array.append(marks_dict[student.student_id])
-                    credits_array.append(1)  # Assuming each course has 1 credit
-            if marks_array and credits_array:
-                gpa = np.sum(np.array(marks_array) * np.array(credits_array)) / np.sum(np.array(credits_array))
-                student.gpa = gpa
-
-    def list_all_courses(self):
-        # Function to list all courses
-        print("List of courses:")
-        for course in self.courses:
-            print(f"Course's Id: {course.course_id}, Course's name: {course.name}")
-
-    def list_all_students(self):
-        # Function to list all students
-        print("List of students:")
-        for student in self.students:
-            print(f"Student's Id: {student.student_id}, Student's name: {student.name}")
-
-    def show_student_marks(self):
-        # Function to show marks for students in a specific course
-        course_id = input("Enter Course's ID to view student's marks: ")
-        course = next((course for course in self.courses if course.course_id == course_id), None)
-        if not course:
-            print("Course not found!")
-            return
-        if course_id in self.marks:
-            print(f"Marks for {course.name} ({course.course_id}):")
-            for student_id, marks in self.marks[course_id].items():
-                student = next((student for student in self.students if student.student_id == student_id), None)
-                if student:
-                    print(f"Student's ID: {student_id}, Student's Name: {student.name}, Marks: {marks}")
-        else:
-            print("No marks entered")
-
-    def decorate_menu(self, stdscr):
-        # Function to set up the curses menu
-        stdscr.clear()
-        stdscr.addstr(0, 0, "Student Management System")
-        stdscr.addstr(2, 0, "1. View List Courses")
-        stdscr.addstr(3, 0, "2. View List Students")
-        stdscr.addstr(4, 0, "3. Input marks for a course")
-        stdscr.addstr(5, 0, "4. Show student's marks for a course")
-        stdscr.addstr(6, 0, "5. Exit")
+    def input_student_marks(self, stdscr):
+        # Prompt the user to enter the course ID to input marks
+        stdscr.addstr("Enter course's ID to input marks: ")
         stdscr.refresh()
+        curses.echo()
+        course_id = stdscr.getstr().decode("utf-8")  # Get string from curses
+        curses.noecho()
+
+        # Check if the course exists
+        course = next((course for course in self.courses if course.course_id == course_id), None)
+        if not course:
+            stdscr.addstr("Course not found.\n")
+            stdscr.addstr("Press any key to return to the menu.")
+            stdscr.refresh()
+            stdscr.getch()
+            return
+
+        # Input marks for each student
+        for student in self.students:
+            while True:
+                try:
+                    stdscr.addstr(f"\nEnter marks for {student.name} ({student.student_id}): ")
+                    stdscr.refresh()
+                    curses.echo()
+                    mark = float(stdscr.getstr().decode("utf-8"))  # Get mark
+                    curses.noecho()
+
+                    # Check if the mark is within the valid range (0 to 100)
+                    if 0.0 <= mark <= 100.0:
+                        mark = math.floor(mark * 10) / 10  # Round down to 1 decimal place
+                        if course_id not in self.marks:
+                            self.marks[course_id] = {}
+                        self.marks[course_id][student.student_id] = mark
+                        break  # Exit loop if input is valid
+                    else:
+                        stdscr.addstr("Invalid mark! Marks must be between 0 and 100.\n")
+                except ValueError:
+                    stdscr.addstr("Invalid input! Please enter a numeric value.\n")
+
+    def list_all_courses(self, stdscr):
+        # Display the list of courses
+        stdscr.addstr("List of courses:\n")
+        for course in self.courses:
+            stdscr.addstr(f"- {course.name} (ID: {course.course_id})\n")
+        stdscr.refresh()
+
+    def list_all_students(self, stdscr):
+        # Display the list of students
+        stdscr.addstr("List of students:\n")
+        for student in self.students:
+            stdscr.addstr(f"- {student.name} (ID: {student.student_id})\n")
+        stdscr.refresh()
+
+    def show_student_marks(self, stdscr):
+        # Display the marks of students
+        stdscr.addstr("Student Marks:\n")
+        for course_id, student_marks in self.marks.items():
+            course_name = next((c.name for c in self.courses if c.course_id == course_id), "Unknown Course")
+            stdscr.addstr(f"\nCourse: {course_name} (ID: {course_id})\n")
+            for student_id, mark in student_marks.items():
+                student_name = next((s.name for s in self.students if s.student_id == student_id), "Unknown Student")
+                stdscr.addstr(f"- {student_name} ({student_id}): {mark}\n")
+        stdscr.refresh()
+
+    def display_menu(self, stdscr):
+        # Display the menu
+        stdscr.clear()
+        stdscr.addstr("Student Management System\n")
+        stdscr.addstr("1. List Courses\n")
+        stdscr.addstr("2. List Students\n")
+        stdscr.addstr("3. Input Marks\n")
+        stdscr.addstr("4. Show Marks\n")
+        stdscr.addstr("5. Exit\n")
+        stdscr.addstr("Enter your choice: ")
+        stdscr.refresh()
+
+        # Get the user's choice
         choice = stdscr.getkey()
         return choice
 
-    def menu(self):
-        # Function to wrap the curses menu
-        try:
-            curses.wrapper(self.curses_menu)
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-    def curses_menu(self, stdscr):
-        # Curses menu loop
+    def menu(self, stdscr):
         while True:
-            choice = self.decorate_menu(stdscr)
+            stdscr.clear()  # Clear the screen
+            choice = self.display_menu(stdscr)  # Display the menu and get the user's choice
 
-            if choice == '1':
-                self.list_all_courses()
-            elif choice == '2':
-                self.list_all_students()
-            elif choice == '3':
-                self.input_student_marks()
-            elif choice == '4':
-                self.show_student_marks()
-            elif choice == '5':
-                print("OK!")
-                break
+            if choice == "1":
+                stdscr.clear()
+                self.list_all_courses(stdscr)
+                stdscr.addstr("\nPress any key to return to the menu.")
+                stdscr.refresh()
+                stdscr.getch()  # Wait for a key press
+
+            elif choice == "2":
+                stdscr.clear()
+                self.list_all_students(stdscr)
+                stdscr.addstr("\nPress any key to return to the menu.")
+                stdscr.refresh()
+                stdscr.getch()
+
+            elif choice == "3":
+                stdscr.clear()
+                self.input_student_marks(stdscr)  # Input marks
+                stdscr.addstr("\nMarks have been entered. Press any key to return.")
+                stdscr.refresh()
+                stdscr.getch()
+
+            elif choice == "4":
+                stdscr.clear()
+                self.show_student_marks(stdscr)
+                stdscr.addstr("\nPress any key to return to the menu.")
+                stdscr.refresh()
+                stdscr.getch()
+
+            elif choice == "5":
+                break  # Exit the program
+
             else:
-                print("Invalid Choice, Please enter (1-5)")
+                stdscr.clear()
+                stdscr.addstr("Invalid choice. Please try again.\n")
+                stdscr.addstr("\nPress any key to return to the menu.")
+                stdscr.refresh()
+                stdscr.getch()
 
 if __name__ == "__main__":
     smms = StudentManagementSystem()
-    num_students = smms.input_num_of_students()
+    num_students = int(input("Enter number of students: "))  # Enter the number of students
     smms.input_student_details(num_students)
-    num_courses = smms.input_num_of_courses()
+    num_courses = int(input("Enter number of courses: "))  # Enter the number of courses
     smms.input_course_details(num_courses)
-    smms.menu()
+    curses.wrapper(smms.menu)  # Run the curses menu
