@@ -1,6 +1,7 @@
 import curses
 import platform
 import math
+import numpy as np
 
 class Student:
     def __init__(self, name, student_id, dob):
@@ -86,6 +87,28 @@ class StudentManagementSystem:
                 except ValueError:
                     stdscr.addstr("Invalid input! Please enter a numeric value.\n")
 
+    def calculate_gpa(self):
+        # Calculate GPA for each student
+        gpa_dict = {}
+        for student in self.students:
+            student_marks = []
+            for course_id in self.marks:
+                if student.student_id in self.marks[course_id]:
+                    student_marks.append(self.marks[course_id][student.student_id])
+            if student_marks:
+                gpa = np.mean(student_marks)
+                gpa_dict[student.student_id] = round(gpa, 2)
+        return gpa_dict
+
+    def show_student_gpa(self, stdscr):
+        # Display the GPA of students
+        gpa_dict = self.calculate_gpa()
+        stdscr.addstr("Student GPA:\n")
+        for student_id, gpa in gpa_dict.items():
+            student_name = next((s.name for s in self.students if s.student_id == student_id), "Unknown Student")
+            stdscr.addstr(f"- {student_name} ({student_id}): {gpa}\n")
+        stdscr.refresh()
+
     def list_all_courses(self, stdscr):
         # Display the list of courses
         stdscr.addstr("List of courses:\n")
@@ -119,7 +142,8 @@ class StudentManagementSystem:
         stdscr.addstr("2. List Students\n")
         stdscr.addstr("3. Input Marks\n")
         stdscr.addstr("4. Show Marks\n")
-        stdscr.addstr("5. Exit\n")
+        stdscr.addstr("5. Show GPA\n")
+        stdscr.addstr("6. Exit\n")
         stdscr.addstr("Enter your choice: ")
         stdscr.refresh()
 
@@ -161,6 +185,13 @@ class StudentManagementSystem:
                 stdscr.getch()
 
             elif choice == "5":
+                stdscr.clear()
+                self.show_student_gpa(stdscr)  # Show GPA
+                stdscr.addstr("\nPress any key to return to the menu.")
+                stdscr.refresh()
+                stdscr.getch()
+
+            elif choice == "6":
                 break  # Exit the program
 
             else:
