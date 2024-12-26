@@ -1,8 +1,6 @@
-# input.py
-
-import math
-import numpy as np
 import curses
+import platform
+import math
 
 class Student:
     def __init__(self, name, student_id, dob):
@@ -77,55 +75,27 @@ class StudentManagementSystem:
                 except ValueError:
                     stdscr.addstr("Invalid input! Please enter a numeric value.\n")
 
-    def calculate_gpa(self):
-        gpa_dict = {}
+    def list_all_courses(self, stdscr):
+        stdscr.addstr("List of courses:\n")
+        for course in self.courses:
+            stdscr.addstr(f"- {course.name} (ID: {course.course_id})\n")
+        stdscr.refresh()
+
+    def list_all_students(self, stdscr):
+        stdscr.addstr("List of students:\n")
         for student in self.students:
-            student_marks = []
-            for course_id in self.marks:
-                if student.student_id in self.marks[course_id]:
-                    student_marks.append(self.marks[course_id][student.student_id])
-            if student_marks:
-                gpa = np.mean(student_marks)
-                gpa_dict[student.student_id] = round(gpa, 2)
-        return gpa_dict
-
-    def show_student_gpa(self, stdscr):
-        gpa_dict = self.calculate_gpa()
-        stdscr.addstr("Student GPA:\n")
-        for student_id, gpa in gpa_dict.items():
-            student_name = next((s.name for s in self.students if s.student_id == student_id), "Unknown Student")
-            stdscr.addstr(f"- {student_name} ({student_id}): {gpa}\n")
+            stdscr.addstr(f"- {student.name} (ID: {student.student_id})\n")
         stdscr.refresh()
 
-    def show_student_details(self, stdscr):
-        stdscr.addstr("Enter student's ID to view details: ")
+    def show_student_marks(self, stdscr):
+        stdscr.addstr("Student Marks:\n")
+        for course_id, student_marks in self.marks.items():
+            course_name = next((c.name for c in self.courses if c.course_id == course_id), "Unknown Course")
+            stdscr.addstr(f"\nCourse: {course_name} (ID: {course_id})\n")
+            for student_id, mark in student_marks.items():
+                student_name = next((s.name for s in self.students if s.student_id == student_id), "Unknown Student")
+                stdscr.addstr(f"- {student_name} ({student_id}): {mark}\n")
         stdscr.refresh()
-        curses.echo()
-        student_id = stdscr.getstr().decode("utf-8")
-        curses.noecho()
-
-        student = next((student for student in self.students if student.student_id == student_id), None)
-        if not student:
-            stdscr.addstr("Student not found.\n")
-            stdscr.addstr("Press any key to return to the menu.")
-            stdscr.refresh()
-            stdscr.getch()
-            return
-
-        stdscr.addstr(f"\nName: {student.name}\n")
-        stdscr.addstr(f"ID: {student.student_id}\n")
-        stdscr.addstr(f"DOB: {student.dob}\n")
-
-        stdscr.addstr("Courses and Marks:\n")
-        for course_id, marks in self.marks.items():
-            if student_id in marks:
-                course_name = next((c.name for c in self.courses if c.course_id == course_id), "Unknown Course")
-                stdscr.addstr(f"- {course_name} (ID: {course_id}): {marks[student_id]}\n")
-
-        stdscr.refresh()
-        stdscr.addstr("\nPress any key to return to the menu.")
-        stdscr.refresh()
-        stdscr.getch()
 
     def display_menu(self, stdscr):
         stdscr.clear()
@@ -134,10 +104,7 @@ class StudentManagementSystem:
         stdscr.addstr("2. List Students\n")
         stdscr.addstr("3. Input Marks\n")
         stdscr.addstr("4. Show Marks\n")
-        stdscr.addstr("5. Show GPA\n")
-        stdscr.addstr("6. Show Student Details\n")
-        stdscr.addstr("7. Sort Students by GPA\n")
-        stdscr.addstr("8. Exit\n")
+        stdscr.addstr("5. Exit\n")
         stdscr.addstr("Enter your choice: ")
         stdscr.refresh()
 
@@ -178,27 +145,6 @@ class StudentManagementSystem:
                 stdscr.getch()
 
             elif choice == "5":
-                stdscr.clear()
-                self.show_student_gpa(stdscr)
-                stdscr.addstr("\nPress any key to return to the menu.")
-                stdscr.refresh()
-                stdscr.getch()
-
-            elif choice == "6":
-                stdscr.clear()
-                self.show_student_details(stdscr)
-                stdscr.addstr("\nPress any key to return to the menu.")
-                stdscr.refresh()
-                stdscr.getch()
-
-            elif choice == "7":
-                stdscr.clear()
-                self.sort_students_by_gpa(stdscr)
-                stdscr.addstr("\nPress any key to return to the menu.")
-                stdscr.refresh()
-                stdscr.getch()
-
-            elif choice == "8":
                 break
 
             else:
@@ -208,3 +154,10 @@ class StudentManagementSystem:
                 stdscr.refresh()
                 stdscr.getch()
 
+if __name__ == "__main__":
+    smms = StudentManagementSystem()
+    num_students = int(input("Enter number of students: "))
+    smms.input_student_details(num_students)
+    num_courses = int(input("Enter number of courses: "))
+    smms.input_course_details(num_courses)
+    curses.wrapper(smms.menu)
